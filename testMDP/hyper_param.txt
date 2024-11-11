@@ -1,0 +1,5 @@
+EPS = 0.2  (Clip Ratio; 1+EPS)
+C_1 = 0.1  (MSE Coefficent)
+C_2 = 0.03 (Entropy Coefficent)
+LR  = 3e-4
+CONVERGED
