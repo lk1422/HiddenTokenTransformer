@@ -18,9 +18,21 @@ checkpoint_callback = CheckpointCallback(
 )
 
 num_digits = 4
+
+vectorize = True
+num_envs = 4
 # Create the environment
 env = cur_gym.TextGym(max_digits=num_digits)
 
+def make_env(seed):
+    def _init():
+        env = cur_gym.TextGym(max_digits=num_digits)
+        return env
+    return _init
+
+if vectorize:
+    env = make_vec_env(env, n_envs=num_envs, vec_env_cls=SubprocVecEnv)
+    # env = DummyVecEnv([make_env(i) for i in range(num_envs)])
 # policy_kwargs = dict(net_arch=dict(pi=[256], vf=[256]))
 # policy_kwargs = {}
 
