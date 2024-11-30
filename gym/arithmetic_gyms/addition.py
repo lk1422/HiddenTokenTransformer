@@ -36,6 +36,7 @@ class TextGym(gym.Env):
         solution = str(num1 + num2)
         return problem, solution
 
+
     def _encode_problem(self, problem):
         """Encode a problem string into a numerical sequence."""
         encoded = [TOKEN_LOOKUP[char] for char in problem]
@@ -82,6 +83,7 @@ class TextGym(gym.Env):
         padding_needed = self.observation_space.shape[0] - len(self.state)
         padded_state = self.state + [TOKEN_LOOKUP["<PAD>"]] * (padding_needed)
 
+        print("".join(REVERSE_LOOKUP[token] for token in self.state))
         self.current_index += 1
         return (
             th.tensor(padded_state, dtype=th.int32, device=device),

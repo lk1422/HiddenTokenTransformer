@@ -56,7 +56,11 @@ class TransformerFeatureExtractor(BaseFeaturesExtractor):
         transformer_out = self.transformer(embeddings, src_key_padding_mask=padding_mask)
 
         # Use the last token's output
-        return self.flatten(transformer_out[:, -1, :])  # Flatten the last token's output
+        last = transformer_out[:, -1, :]
+        flattened = self.flatten(last)
+        print("LAST", last.shape)
+        print("FLAT", flattened.shape)
+        return flattened  # Flatten the last token's output
 
 class TransformerActorCriticPolicy(ActorCriticPolicy):
     def __init__(self, observation_space, action_space, lr_schedule, embed_dim=32, num_heads=2, num_layers=2, max_seq_len=16, **kwargs):
