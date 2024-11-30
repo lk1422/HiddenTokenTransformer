@@ -3,8 +3,8 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
-from arithmetic_gyms import multiplication as cur_gym
-from models import paddedTransformer as cur_transformer
+from arithmetic_gyms import addition as cur_gym
+from models import sinTransformer as cur_transformer
 
 from stable_baselines3.common.callbacks import CheckpointCallback
 
@@ -32,7 +32,7 @@ model = PPO(
     verbose=1,
     tensorboard_log="./ppo_addition_logs/",
     learning_rate=3e-4,
-    # policy_kwargs={"seq_len": 16},
+    policy_kwargs=dict(embed_dim=128, num_heads=4, num_layers=2, max_seq_len=env.max_len),
     batch_size=32,
 )
 
