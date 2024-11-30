@@ -19,19 +19,16 @@ class AdditionDataset():
         solution = str(num1 + num2)
         return problem, solution
 
-    def _supervised_problem(self, seq2seq=False):
-        problem, solution = self._generate_problem()
-        if not seq2seq:
-            return problem, solution
-        return ["<SOS>"] + solution + ["<EOS>"]
-
-    def generate_batch(self, batch_size, seq_len=None):
+    def generate_batch(self, batch_size, seq2seq=False, seq_len=None):
         problems = []
         solutions = []
         for _ in range(batch_size):
-            p, s = self._supervised_problem()
+            p, s = self._generate_problem()
             problems.append(self._encode_problem(p))
-            solutions.append(self._encode_problem(s))
+            if seq2seq:
+                solutions.append(self._encode_problem(s, eos=True, sos=True))
+            else:
+                solutions.append(self._encode_problem(s, eos=True))
         problems = self._pad_sequence(problems, seq_len)
         solutions = self._pad_sequence(solutions, seq_len)
         return torch.tensor(problems, dtype=torch.int32), torch.tensor(solutions, dtype=torch.int64)
@@ -50,7 +47,11 @@ class AdditionDataset():
                 new_sequence.append(seq_prime)
         return new_sequence
 
-    def _encode_problem(self, problem):
+    def _encode_problem(self, problem, eos=False, sos=False):
         """Encode a problem string into a numerical sequence."""
-        return [TOKEN_LOOKUP[char] for char in problem]
+        problem = [TOKEN_LOOKUP[char] for char in problem]
+        problem = problem + [TOKEN_LOOKUP["<EOS>"]] if eos else problem
+        problem = problem + [TOKEN_LOOKUP["<SOS>"]] if sos else problem
+        return problem
+
 
