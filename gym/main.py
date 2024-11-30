@@ -1,3 +1,4 @@
+import torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -18,6 +19,7 @@ checkpoint_callback = CheckpointCallback(
 )
 
 num_digits = 4
+device = torch.device('cuda')
 # Create the environment
 env = cur_gym.TextGym(max_digits=num_digits)
 
