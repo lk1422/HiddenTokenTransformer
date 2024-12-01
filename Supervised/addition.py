@@ -51,7 +51,7 @@ class AdditionDataset():
         """Encode a problem string into a numerical sequence."""
         problem = [TOKEN_LOOKUP[char] for char in problem]
         problem = problem + [TOKEN_LOOKUP["<EOS>"]] if eos else problem
-        problem = problem + [TOKEN_LOOKUP["<SOS>"]] if sos else problem
+        problem = [TOKEN_LOOKUP["<SOS>"]] + problem if sos else problem
         return problem
 
 

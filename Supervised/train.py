@@ -21,6 +21,7 @@ def parse_args():
     parser.add_argument("--digits", type=int, default=4)
     parser.add_argument("--log_freq", type=int, default = 100)
     parser.add_argument("--log_dir", type=str, default ="logs")
+    parser.add_argument("--save_freq", type=int, default = 1000)
 
     return parser.parse_args()
 
@@ -51,6 +52,8 @@ def main():
              max_seq_len,
              device
         )
+    #print(args.seq2seq)
+    #print(type(model))
     #Write Train Loop
     dataset = AdditionDataset(max_digits=args.digits)
     train(model, dataset, args, device, args.seq2seq)
@@ -97,6 +100,7 @@ def get_accuracy(model, dataset, args, device, seq2seq):
         out = out.transpose(0, 1)
         #print(out)
         prediction = torch.argmax(out, dim=-1)
+        #print("TGT", tgt_out)
         #print(out)
         #print(prediction)
         return acc_helper(prediction, tgt_out)
@@ -111,8 +115,11 @@ def train(model, dataset, args, device, seq2seq):
 
     accumulated_loss = 0
     for i in range(args.n_iterations):
-        x, y = dataset.generate_batch(args.batch_size, seq_len=seq_len)
+        x, y = dataset.generate_batch(args.batch_size, seq_len=seq_len, seq2seq=seq2seq)
         x, y = x.to(device), y.to(device)
+        #print(x)
+        #print(y)
+        optim.zero_grad()
         if args.seq2seq:
             #y: [T, N, E]
             tgt_in = y[:, :-1]
@@ -122,6 +129,9 @@ def train(model, dataset, args, device, seq2seq):
             out = model(x)
             tgt_out = y
 
+        out = out.transpose(0, 1)
+        #print(out.shape)
+        #print(tgt_out.shape)
         tgt_out = tgt_out.reshape(-1)
         out = out.reshape(-1, len(TOKEN_LOOKUP))
 
@@ -144,7 +154,9 @@ def train(model, dataset, args, device, seq2seq):
 
             accumulated_loss = 0
 
-        optim.zero_grad()
+        if (i+1) % args.save_freq == 0:
+            torch.save(model.state_dict(), f"params/model_parameters_{i}.pth")
+
 
     writer.close()
 

@@ -76,7 +76,6 @@ class Seq2Seq(nn.Module):
     def generate_square_subsequent_mask(self, sz):
         # Create a square mask for the decoder
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
 
     def forward(self, src, tgt):
@@ -92,6 +91,7 @@ class Seq2Seq(nn.Module):
 
         src_embeddings = src_embeddings.transpose(0, 1)
         tgt_embeddings = tgt_embeddings.transpose(0, 1)
+
 
         output = self.transformer(
             src=src_embeddings,
