@@ -86,7 +86,7 @@ def acc_helper(prediction, tgt):
 def get_accuracy(model, dataset, args, device, seq2seq):
         #GET DIGIT BY DIGIT ACCURACY AND TOTAL ACCURACY
         seq_len = None if seq2seq else 3*args.digits*4 + 3
-        x, y = dataset.generate_batch(100, seq_len=seq_len)
+        x, y = dataset.generate_batch(100, seq_len=seq_len, seq2seq=seq2seq)
         x, y = x.to(device), y.to(device)
         with torch.no_grad():
             if args.seq2seq:

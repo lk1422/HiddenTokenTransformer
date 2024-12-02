@@ -52,10 +52,10 @@ def main():
         env,
         verbose=1,
         tensorboard_log="./ppo_addition_logs/",
-        learning_rate=3e-4,
+        learning_rate=3e-4
+        #batch_size=2
         # learning_rate=1e-3,
         # policy_kwargs={"seq_len": 16},
-        # batch_size=256,
     )
 
     # model_path = "./logs/rl_model_5000000_steps.zip"  # Update with the correct path to the saved model
