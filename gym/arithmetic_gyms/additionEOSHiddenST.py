@@ -23,6 +23,9 @@ class TextGym(gym.Env):
             "tgt": spaces.Box(
                 low=0, high=max(TOKEN_LOOKUP.values()), shape=(self.tgt_length,), dtype=np.int32
             ),
+            "step": spaces.Box(
+                low=0, high=np.inf, shape=(), dtype=np.int32
+            )
         })
 
         self.action_space = spaces.Discrete(len(TOKEN_LOOKUP))
@@ -51,6 +54,7 @@ class TextGym(gym.Env):
         return padded
 
     def reset(self):
+        self.cur_step = 0
         self.src, self.solution = self._generate_problem()
         self.full_state = ["<S>"]
         self.visible_predictions = []
@@ -61,9 +65,11 @@ class TextGym(gym.Env):
         return {
             "src": th.tensor(self.src, dtype=th.int32, device=device),
             "tgt": th.tensor(tgt, dtype=th.int32, device=device),
+            "step": 0
         }
 
     def step(self, action, missing_char_factor=2.0):
+        self.cur_step += 1
         done = False
         reward = 0
 
@@ -100,11 +106,15 @@ class TextGym(gym.Env):
 
         # Return src (unchanged) and padded predictions as tgt
         src = self.src
-        tgt = self._encode_problem(self.full_state, pad_to=self.tgt_length)
+        if len(self.full_state) > self.tgt_length:
+            reward = -missing_char_factor * (remaining_chars + 1)
+            done = True
+        tgt = self._encode_problem(self.full_state[:self.tgt_length], pad_to=self.tgt_length)
 
         return {
             "src": th.tensor(src, dtype=th.int32, device=device),
             "tgt": th.tensor(tgt, dtype=th.int32, device=device),
+            "step": th.tensor(self.cur_step, dtype=th.int32, device=device),
         }, th.tensor(reward, dtype=th.float32, device=device), done, {"is_success": is_success}
 
     def render(self, mode="human"):
@@ -145,6 +155,8 @@ def main():
         action = TOKEN_LOOKUP[user_input]
 
         # Step through the environment
+        print(env)
+        print(action)
         state, reward, done, info = env.step(action)
         cumulative_reward += reward.item()  # Update cumulative reward
 

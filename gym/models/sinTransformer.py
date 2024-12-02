@@ -46,6 +46,7 @@ class TransformerFeatureExtractor(BaseFeaturesExtractor):
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
         # padded_observations = observations
+        print(observations.shape)
         padding_mask = observations == TOKEN_LOOKUP["<PAD>"]
 
         # Embed the observations
@@ -63,7 +64,7 @@ class TransformerFeatureExtractor(BaseFeaturesExtractor):
         return flattened  # Flatten the last token's output
 
 class TransformerActorCriticPolicy(ActorCriticPolicy):
-    def __init__(self, observation_space, action_space, lr_schedule, embed_dim=32, num_heads=2, num_layers=2, max_seq_len=16, **kwargs):
+    def __init__(self, observation_space, action_space, lr_schedule, embed_dim=32, num_heads=2, num_layers=2, max_seq_len=21, **kwargs):
         super().__init__(
             observation_space,
             action_space,

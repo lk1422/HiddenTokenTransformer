@@ -5,11 +5,13 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 # from arithmetic_gyms import multiplication as cur_gym
-from arithmetic_gyms import additionEOSHidden as cur_gym
+from arithmetic_gyms import additionEOSHiddenST as cur_gym
+# from arithmetic_gyms import additionEOSHidden as cur_gym
 # from arithmetic_gyms import additionEOS as cur_gym
 # from arithmetic_gyms import addition as cur_gym
 # from models import paddedTransformer as cur_transformer
-from models import sinTransformer as cur_transformer
+from models import seq2seq as cur_transformer
+# from models import sinTransformer as cur_transformer
 
 from stable_baselines3.common.callbacks import CheckpointCallback
 

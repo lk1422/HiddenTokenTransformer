@@ -3,9 +3,12 @@ import math
 import torch.nn as nn
 from token_lookup import TOKEN_LOOKUP
 
-class EncoderDecoderArithmetic(nn.Module):
-    def __init__(self, d_model, nhead, n_encoder, n_decoder, d_feedforward, max_seq_len, device):
-        super().__init__()
+from stable_baselines3.common.policies import ActorCriticPolicy
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+
+class EncoderDecoderArithmetic(BaseFeaturesExtractor):
+    def __init__(self, observation_space, d_model=16, nhead=2, n_encoder=2, n_decoder=2, d_feedforward=1024, max_seq_len=32, device="cpu"):
+        super(EncoderDecoderArithmetic, self).__init__(observation_space, features_dim=d_model)
         self.transformer = Seq2Seq(d_model, nhead, n_encoder, n_decoder, d_feedforward, max_seq_len, device)
         self.mlp_head = nn.Sequential(*[
                 nn.Linear(d_model, d_model),
@@ -16,8 +19,9 @@ class EncoderDecoderArithmetic(nn.Module):
     def forward(self, obs):
         #src: (S, N, E) tgt: (T, N, E)
         src, tgt = obs['src'], obs['tgt']
-        out = self.transformer(src, tgt) #(T, N, E)
-        out = self.mlp_head(out) #(T, N, C)
+        step = obs['step'].long()
+        out = self.transformer(src.long(), tgt.long()) #(T, N, E)
+        out = self.mlp_head(out)[step, :, :] #(T, N, C)
         return out
 
 
@@ -85,3 +89,14 @@ class Seq2Seq(nn.Module):
         )
 
         return output
+
+class TransformerActorCriticPolicy(ActorCriticPolicy):
+    def __init__(self, observation_space, action_space, lr_schedule, embed_dim=32, num_heads=2, num_layers=2, max_seq_len=21, **kwargs):
+        super().__init__(
+            observation_space,
+            action_space,
+            lr_schedule,
+            features_extractor_class=EncoderDecoderArithmetic,
+            features_extractor_kwargs=dict(),
+            **kwargs,
+        )
