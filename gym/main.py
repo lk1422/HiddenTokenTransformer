@@ -12,6 +12,7 @@ from arithmetic_gyms import additionEOSHiddenST as cur_gym
 # from models import paddedTransformer as cur_transformer
 from models import seq2seq as cur_transformer
 # from models import sinTransformer as cur_transformer
+from stable_baselines3.common.callbacks import CallbackList, BaseCallback
 
 from stable_baselines3.common.callbacks import CheckpointCallback
 
@@ -31,6 +32,22 @@ def load(model, param_file, mlp=True):
 
 
     model.set_parameters(dict(policy=new_state_dict), exact_match=False)
+    
+class CustomLoggerCallback(BaseCallback):
+    """
+    Example of a custom callback to log values to TensorBoard.
+    """
+    def __init__(self, verbose=0):
+        super(CustomLoggerCallback, self).__init__(verbose)
+
+    def _on_step(self) -> bool:
+        # Log a custom value (replace with your logic)
+        infos = self.locals.get('infos', [])
+        if 'terminal_observation' in infos[0]:
+            if len(infos) > 1:
+                print('error!!!')
+            self.logger.record("custom/metric", infos[0]["digits_correct"])
+        return True
 
 
 def main():
@@ -86,9 +103,15 @@ def main():
     )
     load(model, "../Supervised/params/model_parameters_124999.pth")    
 
+
+    custom_logger_callback = CustomLoggerCallback()
+    callback_list = CallbackList([custom_logger_callback, checkpoint_callback])
+
+
     model.learn(
         total_timesteps=500_000_000,
-        callback=checkpoint_callback,
+        # callback=checkpoint_callback,
+        callback=callback_list,
     )
 
     # Test the model
