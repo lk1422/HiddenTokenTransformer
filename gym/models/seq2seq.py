@@ -11,11 +11,6 @@ class EncoderDecoderArithmetic(BaseFeaturesExtractor):
         super(EncoderDecoderArithmetic, self).__init__(observation_space, features_dim=d_model)
         # self.transformer = Seq2Seq(d_model, nhead, n_encoder, n_decoder, d_feedforward, max_seq_len, device)
         self.transformer = Seq2Seq(d_model, nhead, n_encoder, n_decoder, d_feedforward, max_seq_len, device)
-        self.mlp_head = nn.Sequential(*[
-                nn.Linear(d_model, d_model),
-                nn.ReLU(),
-                nn.Linear(d_model, len(TOKEN_LOOKUP))
-                ])
 
     def forward(self, obs):
         #src: (N, S, E) tgt: (N, T)
@@ -23,7 +18,6 @@ class EncoderDecoderArithmetic(BaseFeaturesExtractor):
         step = obs['step'].long().reshape(-1)
         batch_size = src.shape[0]
         out = self.transformer(src.long(), tgt.long()) #(T, N, E)
-        # out = self.mlp_head(out) #(T, N, C)
         out = out[step, torch.arange(batch_size)]
         return out
 
@@ -92,12 +86,19 @@ class Seq2Seq(nn.Module):
         return output
 
 class TransformerActorCriticPolicy(ActorCriticPolicy):
-    def __init__(self, observation_space, action_space, lr_schedule, embed_dim=16, d_feedforward=32, num_heads=2, num_layers=1, **kwargs):
+    def __init__(self, observation_space, action_space, lr_schedule, d_model=16, nhead=2, n_encoder=2, n_decoder=2, d_feedforward=1024, max_seq_len=32, device="cpu", **kwargs):
         super().__init__(
             observation_space,
             action_space,
             lr_schedule,
             features_extractor_class=EncoderDecoderArithmetic,
-            features_extractor_kwargs=dict(d_model=embed_dim, nhead=num_heads, n_encoder=num_layers, n_decoder=num_layers, d_feedforward=d_feedforward),
+            features_extractor_kwargs=dict(
+                device=device, 
+                d_model=d_model, 
+                nhead=nhead, 
+                n_encoder=n_encoder,
+                n_decoder=n_decoder,
+                d_feedforward=d_feedforward
+                ),
             **kwargs,
         )

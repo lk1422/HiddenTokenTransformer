@@ -12,8 +12,43 @@ from arithmetic_gyms import additionEOSHiddenST as cur_gym
 # from models import paddedTransformer as cur_transformer
 from models import seq2seq as cur_transformer
 # from models import sinTransformer as cur_transformer
+from stable_baselines3.common.callbacks import CallbackList, BaseCallback
 
 from stable_baselines3.common.callbacks import CheckpointCallback
+
+device = torch.device('cuda')
+
+def load(model, param_file, mlp=True):
+    #Make Copies and then put them into model withe new names
+    params = torch.load(param_file)
+    new_state_dict ={}
+    for key, value in params.items():
+        new_state_dict["features_extractor." + str(key)] =  value
+    if mlp:
+        new_state_dict["mlp_extractor.policy_net.0.weight"] = params["mlp_head.0.weight"]
+        new_state_dict["mlp_extractor.policy_net.0.bias"] = params["mlp_head.0.bias"]
+        new_state_dict["action_net.weight"] = params["mlp_head.2.weight"]
+        new_state_dict["action_net.bias"] = params["mlp_head.2.bias"]
+
+
+    model.set_parameters(dict(policy=new_state_dict), exact_match=False)
+    
+class CustomLoggerCallback(BaseCallback):
+    """
+    Example of a custom callback to log values to TensorBoard.
+    """
+    def __init__(self, verbose=0):
+        super(CustomLoggerCallback, self).__init__(verbose)
+
+    def _on_step(self) -> bool:
+        # Log a custom value (replace with your logic)
+        infos = self.locals.get('infos', [])
+        if 'terminal_observation' in infos[0]:
+            if len(infos) > 1:
+                print('error!!!')
+            self.logger.record("custom/metric", infos[0]["digits_correct"])
+        return True
+
 
 def main():
     # Save a checkpoint every 1000 steps
@@ -26,9 +61,9 @@ def main():
     )
 
     num_digits = 4
-
     vectorize = False
     num_envs = 4
+
     # Create the environment
     env = cur_gym.TextGym(max_digits=num_digits, use_hidden=True)
 
@@ -46,49 +81,32 @@ def main():
 
     # Define and train the PPO model
     # model = PPO("MlpPolicy", env, policy_kwargs=policy_kwargs, verbose=1, tensorboard_log="./ppo_addition_logs/")
-    # model = PPO(
-    #     cur_transformer.TransformerActorCriticPolicy,
-    #     # "MlpPolicy",
-    #     env,
-    #     verbose=1,
-    #     tensorboard_log="./ppo_addition_logs/",
-    #     learning_rate=3e-4,
-    #     ent_coef=0.02,
-    #     # gamma=.99,
-    #     #batch_size=2
-    #     # learning_rate=1e-3,
-    #     # policy_kwargs={"seq_len": 16},
-    # )
-    from stable_baselines3.common.callbacks import CallbackList, BaseCallback
+    model = PPO(
+        cur_transformer.TransformerActorCriticPolicy,
+        # "MlpPolicy",
+        env,
+        verbose=1,
+        tensorboard_log="./ppo_addition_logs/",
+        learning_rate=3e-4,
+        ent_coef=0.02,
+        device=device,
+        policy_kwargs={
+            "d_model": 128,
+            "nhead"  : 4,
+            "n_encoder" : 2,
+            "n_decoder" : 2,
+            "d_feedforward" : 256,
+            "net_arch": dict(pi=[128]),
+            "device": device, 
+            "share_features_extractor": True
+            },
+    )
+    load(model, "../Supervised/params/model_parameters_124999.pth")    
 
-    class CustomLoggerCallback(BaseCallback):
-        """
-        Example of a custom callback to log values to TensorBoard.
-        """
-        def __init__(self, verbose=0):
-            super(CustomLoggerCallback, self).__init__(verbose)
-
-        def _on_step(self) -> bool:
-            # Log a custom value (replace with your logic)
-            infos = self.locals.get('infos', [])
-            if 'terminal_observation' in infos[0]:
-                if len(infos) > 1:
-                    print('error!!!')
-                self.logger.record("custom/metric", infos[0]["digits_correct"])
-            return True
 
     custom_logger_callback = CustomLoggerCallback()
     callback_list = CallbackList([custom_logger_callback, checkpoint_callback])
 
-    model_path = "./logs/rl_model_2600000_steps.zip"  # Update with the correct path to the saved model
-    model = PPO.load(model_path, env, custom_objects={
-        'policy': cur_transformer.TransformerActorCriticPolicy,
-        'tensorboard_log':"./ppo_addition_logs/",
-        'learning_rate':3e-4,
-        'ent_coef':0.02,
-        'gamma':1,
-        # 'gae_lambda': .90
-    })
 
     model.learn(
         total_timesteps=500_000_000,

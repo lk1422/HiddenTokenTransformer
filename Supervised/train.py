@@ -9,7 +9,7 @@ from models import *
 def parse_args():
     parser = argparse.ArgumentParser(description="Parse Training Parameters")
     parser.add_argument("--seq2seq", type=bool, default=False)
-    parser.add_argument("--d_model", type=float, default=128)
+    parser.add_argument("--d_model", type=int, default=128)
     parser.add_argument("--nhead", type=int, default=4)
     parser.add_argument("--n_encoder", type=int, default=2)
     parser.add_argument("--n_decoder", type=int, default=2)
@@ -89,7 +89,7 @@ def get_accuracy(model, dataset, args, device, seq2seq):
         x, y = dataset.generate_batch(100, seq_len=seq_len, seq2seq=seq2seq)
         x, y = x.to(device), y.to(device)
         with torch.no_grad():
-            if args.seq2seq:
+            if seq2seq:
                 tgt_in = y[:, :-1]
                 tgt_out = y[:, 1:]
                 out = model(x, tgt_in)

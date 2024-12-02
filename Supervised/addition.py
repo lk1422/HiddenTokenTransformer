@@ -53,5 +53,3 @@ class AdditionDataset():
         problem = problem + [TOKEN_LOOKUP["<EOS>"]] if eos else problem
         problem = [TOKEN_LOOKUP["<SOS>"]] + problem if sos else problem
         return problem
-
-
