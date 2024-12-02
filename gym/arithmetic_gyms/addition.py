@@ -10,10 +10,12 @@ class TextGym(gym.Env):
     def __init__(self, max_digits=2):
         super(TextGym, self).__init__()
         self.max_digits = max_digits
+        self.test_digit_length = 3*self.max_digits
+        self.max_len = self.test_digit_length * 3 + 3
 
         # Observation space: tokenized problem as a sequence
         self.observation_space = spaces.Box(
-            low=0, high=max(TOKEN_LOOKUP.values()), shape=(self.max_digits * 3 + 3,), dtype=np.int32
+            low=0, high=max(TOKEN_LOOKUP.values()), shape=(self.test_digit_length * 3 + 3,), dtype=np.int32
         )
 
         # Action space: predict a token (digits 0-9, '+', '=', '<PAD>')
@@ -27,11 +29,12 @@ class TextGym(gym.Env):
 
     def _generate_problem(self):
         """Generate a single random problem."""
-        num1 = np.random.randint(10 ** (self.max_digits - 1), 10 ** self.max_digits)
-        num2 = np.random.randint(10 ** (self.max_digits - 1), 10 ** self.max_digits)
+        num1 = np.random.randint(0, 10 ** self.max_digits)
+        num2 = np.random.randint(0, 10 ** self.max_digits)
         problem = f"{num1}+{num2}="
         solution = str(num1 + num2)
         return problem, solution
+
 
     def _encode_problem(self, problem):
         """Encode a problem string into a numerical sequence."""
@@ -70,13 +73,15 @@ class TextGym(gym.Env):
                 reward = 0  # Incorrect prediction
 
         # Move to the next character or mark as done
-        self.current_index += 1
-        if self.current_index >= len(self.solution):
+        if action == TOKEN_LOOKUP["<EOS>"] or len(self.state) == self.max_len:
             done = True
 
         # Add front padding to match the observation space shape
         padding_needed = self.observation_space.shape[0] - len(self.state)
-        padded_state = [TOKEN_LOOKUP["<PAD>"]] * padding_needed + self.state
+        padded_state = self.state + [TOKEN_LOOKUP["<PAD>"]] * (padding_needed)
+
+        print("".join(REVERSE_LOOKUP[token] for token in self.state))
+        self.current_index += 1
         return (
             th.tensor(padded_state, dtype=th.int32, device=device),
             th.tensor(reward, dtype=th.float32, device=device),

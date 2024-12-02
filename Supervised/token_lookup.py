@@ -14,7 +14,8 @@ TOKEN_LOOKUP = {
     "=": 11,
     "<PAD>" : 12,
     "<H>"   : 13,
-    "<EOS>" : 14
+    "<EOS>" : 14,
+    "<SOS>" : 15
 }
 
 # Reverse lookup for decoding (optional)

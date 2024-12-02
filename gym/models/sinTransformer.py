@@ -5,7 +5,6 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from token_lookup import TOKEN_LOOKUP
-
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
 
 class TransformerFeatureExtractor(BaseFeaturesExtractor):
@@ -57,16 +56,19 @@ class TransformerFeatureExtractor(BaseFeaturesExtractor):
         transformer_out = self.transformer(embeddings, src_key_padding_mask=padding_mask)
 
         # Use the last token's output
-        return self.flatten(transformer_out[:, -1, :])  # Flatten the last token's output
+        last = transformer_out[:, -1, :]
+        flattened = self.flatten(last)
+        print("LAST", last.shape)
+        print("FLAT", flattened.shape)
+        return flattened  # Flatten the last token's output
 
-# Custom Actor-Critic Policy
 class TransformerActorCriticPolicy(ActorCriticPolicy):
-    def __init__(self, observation_space, action_space, lr_schedule, **kwargs):
+    def __init__(self, observation_space, action_space, lr_schedule, embed_dim=32, num_heads=2, num_layers=2, max_seq_len=16, **kwargs):
         super().__init__(
             observation_space,
             action_space,
             lr_schedule,
             features_extractor_class=TransformerFeatureExtractor,
-            features_extractor_kwargs=dict(embed_dim=16, num_heads=2, num_layers=2, max_seq_len=15 + 6),
+            features_extractor_kwargs=dict(embed_dim=embed_dim, num_heads=num_heads, num_layers=num_layers, max_seq_len=max_seq_len),
             **kwargs,
         )
