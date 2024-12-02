@@ -7,15 +7,15 @@ max_seq_len = (3 * 1 * 4) +  3
 device = torch.device('cpu')
 seq2seq=False
 
-model = EncoderDecoderArithmetic( 128, 4, 
+model = EncoderDecoderArithmetic( 64, 4, 
      2, 
      2,
-     1024,
+     64,
      max_seq_len,
      device
  )
 
-model.load_state_dict(torch.load("params/model_parameters_55999.pth"))
+model.load_state_dict(torch.load("params/model_parameters_999.pth"))
 print("NUM PARAMS", sum(p.numel() for p in model.parameters()))
 dataset = AdditionDataset(4)
 
@@ -35,7 +35,7 @@ def solve(problem, model):
 
 def get_accuracy(model, dataset, seq_len, device):
         #GET DIGIT BY DIGIT ACCURACY AND TOTAL ACCURACY
-        x, y = dataset.generate_batch(5, seq_len=seq_len, seq2seq=True)
+        x, y = dataset.generate_batch(100, seq_len=seq_len, seq2seq=True)
         x, y = x.to(device), y.to(device)
         with torch.no_grad():
             tgt_in = y[:, :-1]
@@ -53,7 +53,7 @@ def stringify(x):
     
 
 def render_example(model, dataset, seq_len, device):
-        x, y = dataset.generate_batch(1, seq_len=seq_len, seq2seq=True)
+        x, y = dataset.generate_batch(1, seq_len=None, seq2seq=True)
         x, y = x.to(device), y.to(device)
         with torch.no_grad():
             tgt_in = y[:, :-1]
@@ -67,7 +67,9 @@ def render_example(model, dataset, seq_len, device):
 
 
 
-print("1+1", solve("1+1=", model))
+print("ACC", get_accuracy(model, dataset, None, device))
+print("4013+620=", solve("4013+620=", model))
+#print("ACC", get_accuracy(model, dataset, max_seq_len, device))
 for _ in range(10):
     print(render_example(model, dataset, max_seq_len, device))
     print("="*10)

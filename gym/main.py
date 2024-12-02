@@ -15,6 +15,20 @@ from models import seq2seq as cur_transformer
 
 from stable_baselines3.common.callbacks import CheckpointCallback
 
+device = torch.device('cuda')
+
+def load(model, param_file):
+    #Make Copies and then put them into model withe new names
+    params = torch.load(param_file)
+    new_state_dict ={}
+    for key, value in params.items():
+        new_state_dict["features_extractor." + str(key)] =  value
+        #new_state_dict["pi_features_extractor" + key] = value
+        #features_extractor.transformer.embedding.weight'
+
+    model.set_parameters(dict(policy=new_state_dict), exact_match=False)
+
+
 def main():
     # Save a checkpoint every 1000 steps
     checkpoint_callback = CheckpointCallback(
@@ -26,9 +40,9 @@ def main():
     )
 
     num_digits = 4
-
     vectorize = False
     num_envs = 4
+
     # Create the environment
     env = cur_gym.TextGym(max_digits=num_digits, use_hidden=True)
 
@@ -52,11 +66,25 @@ def main():
         env,
         verbose=1,
         tensorboard_log="./ppo_addition_logs/",
-        learning_rate=3e-4
-        #batch_size=2
-        # learning_rate=1e-3,
-        # policy_kwargs={"seq_len": 16},
+        learning_rate=3e-4,
+        device=device,
+        policy_kwargs={
+            "d_model": 128,
+            "nhead"  : 4,
+            "n_encoder" : 2,
+            "n_decoder" : 2,
+            "d_feedforward" : 256,
+            "device": device, 
+            "share_features_extractor":True
+            },
     )
+    example_weight = "features_extractor.transformer.transformer.encoder.layers.0.self_attn.out_proj.weight"
+
+    print("BEFORE")
+    print(model.get_parameters()["policy"][example_weight])
+    load(model, "../Supervised/params/model_parameters_109999.pth")
+    print("AFTER")
+    print(model.get_parameters()["policy"][example_weight])
 
     # model_path = "./logs/rl_model_5000000_steps.zip"  # Update with the correct path to the saved model
     # model = PPO.load(model_path, env, custom_objects={
