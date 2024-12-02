@@ -16,8 +16,9 @@ class EncoderDecoderArithmetic(nn.Module):
     def forward(self, obs):
         #src: (S, N, E) tgt: (T, N, E)
         src, tgt = obs['src'], obs['tgt']
+        step = obs['step']
         out = self.transformer(src, tgt) #(T, N, E)
-        out = self.mlp_head(out) #(T, N, C)
+        out = self.mlp_head(out)[step, :, :] #(T, N, C)
         return out
 
 

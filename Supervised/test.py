@@ -15,7 +15,8 @@ model = EncoderDecoderArithmetic( 128, 4,
      device
  )
 
-model.load_state_dict(torch.load("params/model_parameters_999.pth"))
+model.load_state_dict(torch.load("params/model_parameters_56999.pth"))
+print("NUM PARAMS", sum(p.numel() for p in model.parameters()))
 dataset = AdditionDataset(4)
 
 def solve(problem, model):
@@ -24,10 +25,7 @@ def solve(problem, model):
     index = 0
     while True:
         tgt_tensor = torch.tensor(tgt).unsqueeze(0)
-        print(tokens)
-        print(tgt_tensor)
         out = model(tokens, tgt_tensor)
-        print(out)
         next_token = torch.argmax(out[index][0]).item()
         if next_token == TOKEN_LOOKUP["<EOS>"]:
             break
@@ -42,8 +40,6 @@ def get_accuracy(model, dataset, seq_len, device):
         with torch.no_grad():
             tgt_in = y[:, :-1]
             tgt_out = y[:, 1:]
-            print(x)
-            print(tgt_in)
             out = model(x, tgt_in)
 
                 
@@ -62,8 +58,6 @@ def render_example(model, dataset, seq_len, device):
         with torch.no_grad():
             tgt_in = y[:, :-1]
             tgt_out = y[:, 1:]
-            print(x)
-            print(tgt_in)
             out = model(x, tgt_in)
 
         out = out.transpose(0, 1)
@@ -73,7 +67,7 @@ def render_example(model, dataset, seq_len, device):
 
 
 
-#print(solve("32+199=", model))
+print("1+1", solve("1+1=", model))
 for _ in range(10):
     print(render_example(model, dataset, max_seq_len, device))
     print("="*10)
