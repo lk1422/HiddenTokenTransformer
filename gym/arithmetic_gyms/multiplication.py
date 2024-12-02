@@ -68,7 +68,7 @@ class TextGym(gym.Env):
             if predicted_char == correct_char:
                 reward = 1  # Correct prediction
             else:
-                reward = -1  # Incorrect prediction
+                reward = 0  # Incorrect prediction
 
         # Move to the next character or mark as done
         self.current_index += 1
