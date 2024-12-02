@@ -7,8 +7,9 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 class EncoderDecoderArithmetic(BaseFeaturesExtractor):
-    def __init__(self, observation_space, d_model=16, nhead=2, n_encoder=2, n_decoder=2, d_feedforward=1024, max_seq_len=32, device="cpu"):
+    def __init__(self, observation_space, d_model=32, nhead=2, n_encoder=2, n_decoder=2, d_feedforward=128, max_seq_len=32, device="cpu"):
         super(EncoderDecoderArithmetic, self).__init__(observation_space, features_dim=d_model)
+        # self.transformer = Seq2Seq(d_model, nhead, n_encoder, n_decoder, d_feedforward, max_seq_len, device)
         self.transformer = Seq2Seq(d_model, nhead, n_encoder, n_decoder, d_feedforward, max_seq_len, device)
         self.mlp_head = nn.Sequential(*[
                 nn.Linear(d_model, d_model),
@@ -22,7 +23,7 @@ class EncoderDecoderArithmetic(BaseFeaturesExtractor):
         step = obs['step'].long().reshape(-1)
         batch_size = src.shape[0]
         out = self.transformer(src.long(), tgt.long()) #(T, N, E)
-        out = self.mlp_head(out) #(T, N, C)
+        # out = self.mlp_head(out) #(T, N, C)
         out = out[step, torch.arange(batch_size)]
         return out
 
@@ -79,8 +80,6 @@ class Seq2Seq(nn.Module):
         src_embeddings = src_embeddings.transpose(0, 1)
         tgt_embeddings = tgt_embeddings.transpose(0, 1)
 
-
-
         output = self.transformer(
             src=src_embeddings,
             tgt=tgt_embeddings,
@@ -93,12 +92,12 @@ class Seq2Seq(nn.Module):
         return output
 
 class TransformerActorCriticPolicy(ActorCriticPolicy):
-    def __init__(self, observation_space, action_space, lr_schedule, embed_dim=32, num_heads=2, num_layers=2, max_seq_len=21, **kwargs):
+    def __init__(self, observation_space, action_space, lr_schedule, embed_dim=32, d_feedforward=128, num_heads=2, num_layers=2, **kwargs):
         super().__init__(
             observation_space,
             action_space,
             lr_schedule,
             features_extractor_class=EncoderDecoderArithmetic,
-            features_extractor_kwargs=dict(),
+            features_extractor_kwargs=dict(d_model=embed_dim, nhead=num_heads, n_encoder=num_layers, n_decoder=num_layers, d_feedforward=d_feedforward),
             **kwargs,
         )
