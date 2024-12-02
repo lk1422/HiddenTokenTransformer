@@ -85,24 +85,25 @@ class TextGym(gym.Env):
         is_success = False
         if predicted_char == "<EOS>":
             is_success = "".join(str(a) for a in self.visible_predictions[:-1]) == self.solution
-            reward = -(missing_char_factor * remaining_chars) + (self.has_started and self.use_hidden)
+            reward = -(remaining_chars) + (self.has_started and self.use_hidden)
+            # reward = (self.has_started and self.use_hidden)
             done = True
         elif predicted_char == "<H>":
             if (not self.has_started) and self.use_hidden:
                 self.has_started = True
             else:
-                reward = -1
+                reward = -1 # Wrong char
         elif self.has_started or (not self.use_hidden):
             if self.current_index < len(self.solution):
                 correct_char = self.solution[self.current_index]
                 if predicted_char == correct_char:
                     reward = 1
                 else:
-                    reward = -1
+                    reward = 0 # No reward for wrong char
             else:
-                reward = -1
+                reward = -1 # Punishment for too many chars
         else:
-            reward = 0
+            reward = 0 # No reward for hidden token
 
         # Return src (unchanged) and padded predictions as tgt
         src = self.src

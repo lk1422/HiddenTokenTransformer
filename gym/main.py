@@ -67,6 +67,7 @@ def main():
         verbose=1,
         tensorboard_log="./ppo_addition_logs/",
         learning_rate=3e-4,
+        ent_coef=0.02,
         device=device,
         policy_kwargs={
             "d_model": 128,
@@ -86,9 +87,14 @@ def main():
     print("AFTER")
     print(model.get_parameters()["policy"][example_weight])
 
-    # model_path = "./logs/rl_model_5000000_steps.zip"  # Update with the correct path to the saved model
+    # model_path = "./logs/rl_model_50000_steps.zip"  # Update with the correct path to the saved model
     # model = PPO.load(model_path, env, custom_objects={
-    #     'policy': "MlpPolicy"
+    #     'policy': cur_transformer.TransformerActorCriticPolicy,
+    #     'tensorboard_log':"./ppo_addition_logs/",
+    #     'learning_rate':3e-4,
+    #     'ent_coef':0.03,
+    #     'gamma':.90,
+    #     'gae_lambda': .90
     # })
 
     model.learn(

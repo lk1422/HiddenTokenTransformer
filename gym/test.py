@@ -3,12 +3,14 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
-from arithmetic_gyms import additionEOSHidden as cur_gym
-from models import sinTransformer as cur_transformer
+# from arithmetic_gyms import additionEOSHidden as cur_gym
+from arithmetic_gyms import additionEOSHiddenST as cur_gym
+# from models import sinTransformer as cur_transformer
+from models import seq2seq as cur_transformer
 
 def load_and_test_model():
     # Load the saved model
-    model_path = "./logs/rl_model_50000_steps.zip"  # Update with the correct path to the saved model
+    model_path = "./logs/rl_model_500000_steps.zip"  # Update with the correct path to the saved model
     num_digits = 4  # Same number of digits used during training
 
     # Create the environment
