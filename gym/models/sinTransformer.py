@@ -8,7 +8,7 @@ from token_lookup import TOKEN_LOOKUP
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
 
 class TransformerFeatureExtractor(BaseFeaturesExtractor):
-    def __init__(self, observation_space, embed_dim=128, num_heads=4, num_layers=2, max_seq_len=20):
+    def __init__(self, observation_space, embed_dim=16, num_heads=1, num_layers=1, max_seq_len=20):
         super(TransformerFeatureExtractor, self).__init__(observation_space, features_dim=embed_dim)
 
         self.max_seq_len = max_seq_len
