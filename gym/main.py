@@ -17,14 +17,18 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 
 device = torch.device('cuda')
 
-def load(model, param_file):
+def load(model, param_file, mlp=True):
     #Make Copies and then put them into model withe new names
     params = torch.load(param_file)
     new_state_dict ={}
     for key, value in params.items():
         new_state_dict["features_extractor." + str(key)] =  value
-        #new_state_dict["pi_features_extractor" + key] = value
-        #features_extractor.transformer.embedding.weight'
+    if mlp:
+        new_state_dict["mlp_extractor.policy_net.0.weight"] = params["mlp_head.0.weight"]
+        new_state_dict["mlp_extractor.policy_net.0.bias"] = params["mlp_head.0.bias"]
+        new_state_dict["action_net.weight"] = params["mlp_head.2.weight"]
+        new_state_dict["action_net.bias"] = params["mlp_head.2.bias"]
+
 
     model.set_parameters(dict(policy=new_state_dict), exact_match=False)
 
@@ -75,27 +79,12 @@ def main():
             "n_encoder" : 2,
             "n_decoder" : 2,
             "d_feedforward" : 256,
+            "net_arch": dict(pi=[128]),
             "device": device, 
-            "share_features_extractor":True
+            "share_features_extractor": True
             },
     )
-    example_weight = "features_extractor.transformer.transformer.encoder.layers.0.self_attn.out_proj.weight"
-
-    print("BEFORE")
-    print(model.get_parameters()["policy"][example_weight])
-    load(model, "../Supervised/params/model_parameters_109999.pth")
-    print("AFTER")
-    print(model.get_parameters()["policy"][example_weight])
-
-    # model_path = "./logs/rl_model_50000_steps.zip"  # Update with the correct path to the saved model
-    # model = PPO.load(model_path, env, custom_objects={
-    #     'policy': cur_transformer.TransformerActorCriticPolicy,
-    #     'tensorboard_log':"./ppo_addition_logs/",
-    #     'learning_rate':3e-4,
-    #     'ent_coef':0.03,
-    #     'gamma':.90,
-    #     'gae_lambda': .90
-    # })
+    load(model, "../Supervised/params/model_parameters_124999.pth")    
 
     model.learn(
         total_timesteps=500_000_000,

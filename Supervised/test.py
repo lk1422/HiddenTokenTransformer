@@ -7,10 +7,10 @@ max_seq_len = (3 * 1 * 4) +  3
 device = torch.device('cpu')
 seq2seq=False
 
-model = EncoderDecoderArithmetic( 64, 4, 
+model = EncoderDecoderArithmetic( 128, 4, 
      2, 
      2,
-     64,
+     256,
      max_seq_len,
      device
  )
