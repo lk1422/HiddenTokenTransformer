@@ -46,33 +46,54 @@ def main():
 
     # Define and train the PPO model
     # model = PPO("MlpPolicy", env, policy_kwargs=policy_kwargs, verbose=1, tensorboard_log="./ppo_addition_logs/")
-    model = PPO(
-        cur_transformer.TransformerActorCriticPolicy,
-        # "MlpPolicy",
-        env,
-        verbose=1,
-        tensorboard_log="./ppo_addition_logs/",
-        learning_rate=3e-4,
-        ent_coef=0.02,
-        # gamma=.99,
-        #batch_size=2
-        # learning_rate=1e-3,
-        # policy_kwargs={"seq_len": 16},
-    )
+    # model = PPO(
+    #     cur_transformer.TransformerActorCriticPolicy,
+    #     # "MlpPolicy",
+    #     env,
+    #     verbose=1,
+    #     tensorboard_log="./ppo_addition_logs/",
+    #     learning_rate=3e-4,
+    #     ent_coef=0.02,
+    #     # gamma=.99,
+    #     #batch_size=2
+    #     # learning_rate=1e-3,
+    #     # policy_kwargs={"seq_len": 16},
+    # )
+    from stable_baselines3.common.callbacks import CallbackList, BaseCallback
 
-    # model_path = "./logs/rl_model_50000_steps.zip"  # Update with the correct path to the saved model
-    # model = PPO.load(model_path, env, custom_objects={
-    #     'policy': cur_transformer.TransformerActorCriticPolicy,
-    #     'tensorboard_log':"./ppo_addition_logs/",
-    #     'learning_rate':3e-4,
-    #     'ent_coef':0.03,
-    #     'gamma':.90,
-    #     'gae_lambda': .90
-    # })
+    class CustomLoggerCallback(BaseCallback):
+        """
+        Example of a custom callback to log values to TensorBoard.
+        """
+        def __init__(self, verbose=0):
+            super(CustomLoggerCallback, self).__init__(verbose)
+
+        def _on_step(self) -> bool:
+            # Log a custom value (replace with your logic)
+            infos = self.locals.get('infos', [])
+            if 'terminal_observation' in infos[0]:
+                if len(infos) > 1:
+                    print('error!!!')
+                self.logger.record("custom/metric", infos[0]["digits_correct"])
+            return True
+
+    custom_logger_callback = CustomLoggerCallback()
+    callback_list = CallbackList([custom_logger_callback, checkpoint_callback])
+
+    model_path = "./logs/rl_model_2600000_steps.zip"  # Update with the correct path to the saved model
+    model = PPO.load(model_path, env, custom_objects={
+        'policy': cur_transformer.TransformerActorCriticPolicy,
+        'tensorboard_log':"./ppo_addition_logs/",
+        'learning_rate':3e-4,
+        'ent_coef':0.02,
+        'gamma':1,
+        # 'gae_lambda': .90
+    })
 
     model.learn(
         total_timesteps=500_000_000,
-        callback=checkpoint_callback,
+        # callback=checkpoint_callback,
+        callback=callback_list,
     )
 
     # Test the model

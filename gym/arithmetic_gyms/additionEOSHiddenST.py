@@ -14,8 +14,10 @@ class TextGym(gym.Env):
         self.use_hidden = use_hidden
 
         # Observation space: separate src and target
-        self.src_length = buffer_factor * self.max_digits * 2 + 2  # e.g., "12+34="
-        self.tgt_length = buffer_factor * self.max_digits + 1 + 1 + buffer_factor * (use_hidden * max_hidden_tokens)
+        # self.src_length = buffer_factor * self.max_digits * 2 + 2  # e.g., "12+34="
+        # self.tgt_length = buffer_factor * self.max_digits + 1 + 1 + buffer_factor * (use_hidden * max_hidden_tokens)
+        self.src_length = 16
+        self.tgt_length = 16
         self.observation_space = spaces.Dict({
             "src": spaces.Box(
                 low=0, high=max(TOKEN_LOOKUP.values()), shape=(self.src_length,), dtype=np.int32
@@ -83,10 +85,17 @@ class TextGym(gym.Env):
         remaining_chars = max(0, len(self.solution) - self.current_index)
 
         is_success = False
+        num_correct = 0
+
         if predicted_char == "<EOS>":
-            is_success = "".join(str(a) for a in self.visible_predictions[:-1]) == self.solution
-            reward = -(remaining_chars) + (self.has_started and self.use_hidden)
-            # reward = (self.has_started and self.use_hidden)
+            preds = "".join(str(a) for a in self.visible_predictions[:-1]) 
+            is_success = preds == self.solution
+
+            num_correct = sum(1 if a == b else 0 for a, b in zip(preds, self.solution))
+            bonus = 2 * is_success
+
+            reward = -(remaining_chars) + (self.has_started and self.use_hidden) + bonus
+            # reward = -(remaining_chars) + (self.has_started and self.use_hidden) + 
             done = True
         elif predicted_char == "<H>":
             if (not self.has_started) and self.use_hidden:
@@ -116,7 +125,7 @@ class TextGym(gym.Env):
             "src": th.tensor(src, dtype=th.int32, device=device),
             "tgt": th.tensor(tgt, dtype=th.int32, device=device),
             "step": th.tensor(self.cur_step, dtype=th.int32, device=device),
-        }, th.tensor(reward, dtype=th.float32, device=device), done, {"is_success": is_success}
+        }, th.tensor(reward, dtype=th.float32, device=device), done, {"is_success": is_success, "digits_correct": num_correct}
 
     def render(self, mode="human"):
         # progress = "".join([token] for token in self.full_state)

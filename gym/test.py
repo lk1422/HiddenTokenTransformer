@@ -10,7 +10,7 @@ from models import seq2seq as cur_transformer
 
 def load_and_test_model():
     # Load the saved model
-    model_path = "./logs/rl_model_500000_steps.zip"  # Update with the correct path to the saved model
+    model_path = "./logs/rl_model_4000000_steps.zip"  # Update with the correct path to the saved model
     num_digits = 4  # Same number of digits used during training
 
     # Create the environment

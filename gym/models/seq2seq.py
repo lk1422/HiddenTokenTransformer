@@ -7,7 +7,7 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 class EncoderDecoderArithmetic(BaseFeaturesExtractor):
-    def __init__(self, observation_space, d_model=32, nhead=2, n_encoder=2, n_decoder=2, d_feedforward=128, max_seq_len=32, device="cpu"):
+    def __init__(self, observation_space, d_model=None, nhead=None, n_encoder=None, n_decoder=None, d_feedforward=None, max_seq_len=16, device="cpu"):
         super(EncoderDecoderArithmetic, self).__init__(observation_space, features_dim=d_model)
         # self.transformer = Seq2Seq(d_model, nhead, n_encoder, n_decoder, d_feedforward, max_seq_len, device)
         self.transformer = Seq2Seq(d_model, nhead, n_encoder, n_decoder, d_feedforward, max_seq_len, device)
@@ -92,7 +92,7 @@ class Seq2Seq(nn.Module):
         return output
 
 class TransformerActorCriticPolicy(ActorCriticPolicy):
-    def __init__(self, observation_space, action_space, lr_schedule, embed_dim=32, d_feedforward=128, num_heads=2, num_layers=2, **kwargs):
+    def __init__(self, observation_space, action_space, lr_schedule, embed_dim=16, d_feedforward=32, num_heads=2, num_layers=1, **kwargs):
         super().__init__(
             observation_space,
             action_space,
