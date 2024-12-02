@@ -17,11 +17,13 @@ class EncoderDecoderArithmetic(BaseFeaturesExtractor):
                 ])
 
     def forward(self, obs):
-        #src: (S, N, E) tgt: (T, N, E)
+        #src: (N, S, E) tgt: (N, T)
         src, tgt = obs['src'], obs['tgt']
-        step = obs['step'].long()
+        step = obs['step'].long().reshape(-1)
+        batch_size = src.shape[0]
         out = self.transformer(src.long(), tgt.long()) #(T, N, E)
-        out = self.mlp_head(out)[step, :, :] #(T, N, C)
+        out = self.mlp_head(out) #(T, N, C)
+        out = out[step, torch.arange(batch_size)]
         return out
 
 

@@ -15,7 +15,7 @@ model = EncoderDecoderArithmetic( 128, 4,
      device
  )
 
-model.load_state_dict(torch.load("params/model_parameters_56999.pth"))
+model.load_state_dict(torch.load("params/model_parameters_55999.pth"))
 print("NUM PARAMS", sum(p.numel() for p in model.parameters()))
 dataset = AdditionDataset(4)
 
