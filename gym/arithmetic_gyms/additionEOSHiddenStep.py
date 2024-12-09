@@ -1,5 +1,4 @@
-import gym
-from gym import spaces
+import gymnasium as gym
 import numpy as np
 from token_lookup import TOKEN_LOOKUP, REVERSE_LOOKUP
 import torch as th
@@ -14,12 +13,13 @@ class TextGym(gym.Env):
         self.use_hidden = use_hidden
 
         # Observation space: tokenized problem as a sequence
-        self.observation_space = spaces.Box(
-            low=0, high=max(TOKEN_LOOKUP.values()), shape=(self.max_digits * 3 + 3 + 6,), dtype=np.int32
+        self.observation_space = gym.spaces.Box(
+            low=0, high=max(TOKEN_LOOKUP.values()), shape=(1), dtype=np.int32
         )
+        # self.observation_space = gym.spaces.Discrete(len(TOKEN_LOOKUP))
 
         # Action space: predict a token (digits 0-9, '+', '=', '<PAD>', '<EOS>')
-        self.action_space = spaces.Discrete(len(TOKEN_LOOKUP))
+        self.action_space = gym.spaces.Discrete(len(TOKEN_LOOKUP))
 
         self.current_problem = None
         self.solution = None
@@ -34,14 +34,8 @@ class TextGym(gym.Env):
         """Generate a single random problem with digits up to max_digits in length."""
         num1 = np.random.randint(1, 10 ** self.max_digits)  # Up to max_digits long
         num2 = np.random.randint(1, 10 ** self.max_digits)  # Up to max_digits long
-
-        num1_str = str(num1).zfill(self.max_digits)
-        num2_str = str(num2).zfill(self.max_digits)
-
-        problem = f"{num1_str}+{num2_str}="
-
-        solution = str(num1+num2).zfill(self.max_digits + 1)
-        # solution = str(num1 + num2)
+        problem = f"{num1}+{num2}="
+        solution = str(num1 + num2)
         # print(solution)
         return problem, solution
 
@@ -52,6 +46,7 @@ class TextGym(gym.Env):
 
     def reset(self):
         """Reset the environment to a new problem."""
+        self.input_index = 0
         self.current_problem, self.solution = self._generate_problem()
         self.current_index = -1
         self.state = self._encode_problem(self.current_problem).tolist()
@@ -60,14 +55,21 @@ class TextGym(gym.Env):
         self.has_started = False  # Mark the start of the "thinking" phase
 
         # Add front padding to match the observation space shape
-        padding_needed = self.observation_space.shape[0] - len(self.state)
-        padded_state = [TOKEN_LOOKUP["<PAD>"]] * padding_needed + self.state
-        return th.tensor(padded_state, dtype=th.int32, device=device)
+        return th.tensor(self.state[0], dtype=th.int32, device=device)
 
     def step(self, action, missing_char_factor=2.0):
         """Take a step in the environment."""
         done = False
         reward = 0
+        self.input_index += 1
+
+        if self.input_index < len(self.state):
+            return (
+                th.tensor(self.state[self.input_index], dtype=th.int32, device=device),
+                th.tensor(reward, dtype=th.float32, device=device),
+                done,
+                {"is_success": False},
+            )
 
         # Decode action into a character
         predicted_char = REVERSE_LOOKUP[action]
@@ -91,16 +93,10 @@ class TextGym(gym.Env):
         # print(self.use_hidden)
         is_success = False
 
-        num_correct = 0
         if predicted_char == "<EOS>":
             # print(self.predictions , self.solution)
-
-            # num_correct = sum(1 if a == b else 0 for a, b in zip(preds, self.solution))
             is_success = "".join(str(a) for a in self.predictions[:-1]) == self.solution
-            # reward = - (missing_char_factor *remaining_chars) + (self.has_started and self.use_hidden)
-            reward = 0
-            if self.use_hidden:
-                reward = - (not self.has_started )
+            reward = - (missing_char_factor *remaining_chars) + (self.has_started and self.use_hidden)
             done = True
 
         elif predicted_char == "<H>":
@@ -108,7 +104,7 @@ class TextGym(gym.Env):
                 self.has_started = True  # Mark the start of the "thinking" phase
                 reward = 0  # No immediate reward for predicting <H>
             else:
-                reward = -.5  # Penalize multiple <H> tokens if invalid
+                reward = -1  # Penalize multiple <H> tokens if invalid
 
 
         elif self.has_started or (not self.use_hidden):
@@ -118,37 +114,36 @@ class TextGym(gym.Env):
                 if predicted_char == correct_char:
                     reward = 1  # Correct prediction
                 else:
-                    reward = 0  # Incorrect prediction
+                    reward = -1  # Incorrect prediction
                     # print("wanted ")
                     # print(self.solution[self.current_index])
             else:
                 # Penalize extra tokens after the solution completion
-                reward = -.2
+                reward = -1
 
         else:
             # Little to no reward for tokens before <H>
             reward = 0
 
 
-        padding_needed = self.observation_space.shape[0] - len(self.state)
-
-        if padding_needed <= 0:
-            # reward = -missing_char_factor * (remaining_chars + 1)
-            reward = -1
-            done = True
-
-
-        # Add front padding to match the observation space shape
-        padding_needed = self.observation_space.shape[0] - len(self.state)
-        padded_state = [TOKEN_LOOKUP["<PAD>"]] * padding_needed + self.state
-
+        # padding_needed = self.observation_space.shape[0] - len(self.state)
+        #
+        # if padding_needed < 0:
+        #     reward = -missing_char_factor * (remaining_chars + 1)
+        #     done = True
+        #
+        #
+        # # Add front padding to match the observation space shape
+        # padding_needed = self.observation_space.shape[0] - len(self.state)
+        # padded_state = [TOKEN_LOOKUP["<PAD>"]] * padding_needed + self.state
+        #
         # reward = is_success
 
         return (
-            th.tensor(padded_state, dtype=th.int32, device=device),
+            th.tensor(self.state[-1], dtype=th.int32, device=device),
             th.tensor(reward, dtype=th.float32, device=device),
             done,
-            {"is_success": is_success, "digits_correct": num_correct}
+            {"is_success": False},
         )
 
     def render(self, mode="human"):
@@ -161,7 +156,7 @@ class TextGym(gym.Env):
 
 def main():
     # Initialize the environment
-    env = TextGym(max_digits=4)
+    env = TextGym(max_digits=2)
     
     # Patch the global variables for the environment to use
     globals().update({"TOKEN_LOOKUP": TOKEN_LOOKUP, "REVERSE_LOOKUP": REVERSE_LOOKUP})

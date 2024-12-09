@@ -3,10 +3,11 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
-# from arithmetic_gyms import additionEOSHidden as cur_gym
-from arithmetic_gyms import additionEOSHiddenST as cur_gym
+from arithmetic_gyms import additionEOSHidden as cur_gym
+# from arithmetic_gyms import additionEOSHiddenST as cur_gym
 # from models import sinTransformer as cur_transformer
-from models import seq2seq as cur_transformer
+from models import paddedTransformer as cur_transformer
+# from models import seq2seq as cur_transformer
 from main import load
 import torch
 
@@ -14,8 +15,8 @@ device = torch.device('cuda')
 
 def load_and_test_model():
     # Load the saved model
-    model_path = "./logs/rl_model_4000000_steps.zip"  # Update with the correct path to the saved model
-    num_digits = 4  # Same number of digits used during training
+    model_path = "./logs/rl_model_4500000_steps.zip"  # Update with the correct path to the saved model
+    num_digits = 2  # Same number of digits used during training
 
     # Create the environment
     env = cur_gym.TextGym(max_digits=num_digits)
@@ -77,17 +78,17 @@ def test_model():
         ent_coef=0.02,
         device=device,
         policy_kwargs={
-            "d_model": 128,
-            "nhead"  : 4,
-            "n_encoder" : 2,
-            "n_decoder" : 2,
-            "d_feedforward" : 256,
+            # "d_model": 128,
+            # "nhead"  : 4,
+            # "n_encoder" : 2,
+            # "n_decoder" : 2,
+            # "d_feedforward" : 256,
             "net_arch": dict(pi=[128]),
-            "device": device,
+            # "device": device,
             "share_features_extractor": True
             },
     )
-    load(model, "../Supervised/params/model_parameters_124999.pth")
+    # load(model, "../Supervised/params/model_parameters_150000.pth")
 
 
     print("Model loaded successfully.")
@@ -121,5 +122,5 @@ def test_model():
     print(f"Average Reward over {total_episodes} episodes: {total_reward / total_episodes}")
 
 if __name__ == '__main__':
-    #load_and_test_model()
-    test_model()
+    load_and_test_model()
+    # test_model()

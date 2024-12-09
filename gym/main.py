@@ -5,18 +5,19 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 # from arithmetic_gyms import multiplication as cur_gym
-from arithmetic_gyms import additionEOSHiddenST as cur_gym
-# from arithmetic_gyms import additionEOSHidden as cur_gym
+# from arithmetic_gyms import additionEOSHiddenST as cur_gym
+from arithmetic_gyms import additionEOSHidden as cur_gym
 # from arithmetic_gyms import additionEOS as cur_gym
 # from arithmetic_gyms import addition as cur_gym
-# from models import paddedTransformer as cur_transformer
-from models import seq2seq as cur_transformer
+from models import paddedTransformer as cur_transformer
+# from models import seq2seq as cur_transformer
 # from models import sinTransformer as cur_transformer
 from stable_baselines3.common.callbacks import CallbackList, BaseCallback
 
 from stable_baselines3.common.callbacks import CheckpointCallback
 
-device = torch.device('cuda')
+# device = torch.device('cuda')
+device = torch.device('cpu')
 
 def load(model, param_file, mlp=True):
     #Make Copies and then put them into model withe new names
@@ -60,7 +61,7 @@ def main():
       save_vecnormalize=True,
     )
 
-    num_digits = 4
+    num_digits = 2
     vectorize = False
     num_envs = 4
 
@@ -87,22 +88,24 @@ def main():
         env,
         verbose=1,
         tensorboard_log="./ppo_addition_logs/",
-        learning_rate=3e-4,
-        ent_coef=0.02,
+        learning_rate=1e-4,
+        ent_coef=0.01,
+        gamma=0.98,
+        batch_size=512,
         device=device,
         policy_kwargs={
-            "d_model": 128,
-            "nhead"  : 4,
-            "n_encoder" : 2,
-            "n_decoder" : 2,
-            "d_feedforward" : 256,
-            "net_arch": dict(pi=[128]),
-            "device": device, 
-            "share_features_extractor": True
+            # "d_model": 128,
+            # "nhead"  : 2,
+            # "n_encoder" : 4,
+            # "n_decoder" : 4,
+            # "d_feedforward" : 1024,
+            # # "net_arch": dict(pi=[128]),
+            # "net_arch": [128],
+            # "device": device, 
+            # "share_features_extractor": True
             },
     )
-    load(model, "../Supervised/params/model_parameters_124999.pth")    
-
+    # load(model, "../Supervised/params/model_parameters_124999.pth")    
 
     custom_logger_callback = CustomLoggerCallback()
     callback_list = CallbackList([custom_logger_callback, checkpoint_callback])

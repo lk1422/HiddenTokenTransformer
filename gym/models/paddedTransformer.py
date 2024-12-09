@@ -64,7 +64,7 @@ class TransformerActorCriticPolicy(ActorCriticPolicy):
             action_space,
             lr_schedule,
             features_extractor_class=TransformerFeatureExtractor,
-            features_extractor_kwargs=dict(embed_dim=32, num_heads=2, num_layers=2, max_seq_len=19),
+            features_extractor_kwargs=dict(embed_dim=64, num_heads=2, num_layers=2, max_seq_len=15),
             **kwargs,
         )
 

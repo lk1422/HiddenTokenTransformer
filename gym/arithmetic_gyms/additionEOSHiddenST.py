@@ -1,5 +1,5 @@
-import gym
-from gym import spaces
+import gymnasium as gym
+# from gym import spaces
 import numpy as np
 from token_lookup import TOKEN_LOOKUP, REVERSE_LOOKUP
 import torch as th
@@ -18,19 +18,19 @@ class TextGym(gym.Env):
         # self.tgt_length = buffer_factor * self.max_digits + 1 + 1 + buffer_factor * (use_hidden * max_hidden_tokens)
         self.src_length = 16
         self.tgt_length = 16
-        self.observation_space = spaces.Dict({
-            "src": spaces.Box(
+        self.observation_space = gym.spaces.Dict({
+            "src": gym.spaces.Box(
                 low=0, high=max(TOKEN_LOOKUP.values()), shape=(self.src_length,), dtype=np.int32
             ),
-            "tgt": spaces.Box(
+            "tgt": gym.spaces.Box(
                 low=0, high=max(TOKEN_LOOKUP.values()), shape=(self.tgt_length,), dtype=np.int32
             ),
-            "step": spaces.Box(
+            "step": gym.spaces.Box(
                 low=0, high=np.inf, shape=(), dtype=np.int32
             )
         })
 
-        self.action_space = spaces.Discrete(len(TOKEN_LOOKUP))
+        self.action_space = gym.spaces.Discrete(len(TOKEN_LOOKUP))
 
     def _generate_problem(self):
         """Generate a single random problem with digits up to max_digits in length."""
