@@ -11,11 +11,12 @@ TOKEN_LOOKUP = {
     "8": 8,
     "9": 9,
     "+": 10,
-    "=": 11,
-    "<PAD>": 12,
+    "*": 11, 
+    "=": 12,
     "<H>": 13,
     "<EOS>": 14,
     "<S>": 15,
+    "<PAD>": 16,
 }
 
 # Reverse lookup for decoding (optional)
