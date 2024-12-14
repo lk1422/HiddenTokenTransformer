@@ -4,5 +4,7 @@ logs
 ppo_addition_logs
 *.pth
 *.pem
+*ec2*
+*.log
 
 **/__pycache__

@@ -5,7 +5,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 # from arithmetic_gyms import multiplication as cur_gym
-from arithmetic_gyms import additionEOSHiddenST as cur_gym
+from arithmetic_gyms import multiplication as cur_gym
 # from arithmetic_gyms import additionEOSHidden as cur_gym
 # from arithmetic_gyms import additionEOS as cur_gym
 # from arithmetic_gyms import addition as cur_gym
@@ -82,7 +82,7 @@ def main():
     # Define and train the PPO model
     # model = PPO("MlpPolicy", env, policy_kwargs=policy_kwargs, verbose=1, tensorboard_log="./ppo_addition_logs/")
     model = PPO(
-        cur_transformer.TransformerActorCriticPolicy,
+        cur_transformer.LSTMActorCriticPolicy,
         # "MlpPolicy",
         env,
         verbose=1,
@@ -92,16 +92,13 @@ def main():
         device=device,
         policy_kwargs={
             "d_model": 128,
-            "nhead"  : 4,
             "n_encoder" : 2,
             "n_decoder" : 2,
-            "d_feedforward" : 256,
             "net_arch": dict(pi=[128]),
-            "device": device, 
             "share_features_extractor": True
             },
     )
-    load(model, "../Supervised/params/model_parameters_124999.pth")    
+    #load(model, "../Supervised/params/model_parameters_124999.pth")    
 
 
     custom_logger_callback = CustomLoggerCallback()

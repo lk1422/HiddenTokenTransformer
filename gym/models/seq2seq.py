@@ -21,6 +21,60 @@ class EncoderDecoderArithmetic(BaseFeaturesExtractor):
         out = out[step, torch.arange(batch_size)]
         return out
 
+class LSTMActorCriticPolicy(ActorCriticPolicy):
+    def __init__(self, observation_space, action_space, lr_schedule, d_model=16, n_encoder=2, n_decoder=2,  **kwargs):
+        super().__init__(
+            observation_space,
+            action_space,
+            lr_schedule,
+            features_extractor_class=EncoderDecoderArithmeticLSTM,
+            features_extractor_kwargs=dict(
+                d_model=d_model, 
+                n_encoder=n_encoder,
+                n_decoder=n_decoder,
+                ),
+            **kwargs,
+        )
+
+class EncoderDecoderArithmeticLSTM(BaseFeaturesExtractor):
+    def __init__(self, observation_space, d_model=None, n_encoder=None, n_decoder=None):
+        super().__init__(observation_space, features_dim=d_model)
+        self.model = LSTMSeq2Seq(d_model, n_encoder, n_decoder)
+
+    def forward(self, obs):
+        #src: (N, S) tgt: (N, T)
+        src, tgt = obs['src'], obs['tgt']
+        step = obs['step'].long().reshape(-1)
+        batch_size = src.shape[0]
+        out = self.model(src.long(), tgt.long()) #(T, N, E)
+        out = out[step, torch.arange(batch_size)]
+        return out
+
+class LSTMSeq2Seq(nn.Module):
+    def __init__(self, d_model, n_encoder, n_decoder):
+        super().__init__()
+        #Encoder can be bidirectional 
+        self.encoder = nn.LSTM(d_model, d_model, num_layers=n_encoder)
+        self.decoder = nn.LSTM(d_model, d_model, num_layers=n_decoder)
+        self.embedding = nn.Embedding(len(TOKEN_LOOKUP), d_model, padding_idx=TOKEN_LOOKUP["<PAD>"])
+        self.n_encoder = n_encoder
+        self.n_decoder = n_decoder
+        self.d_model = d_model
+
+    def forward(self, src, tgt):
+        N = src.shape[0]
+        src_embeddings = self.embedding(src)
+        tgt_embeddings = self.embedding(tgt)
+        src_embeddings = src_embeddings.transpose(0, 1)
+        tgt_embeddings = tgt_embeddings.transpose(0, 1)
+
+        s0 = (torch.zeros(self.n_encoder, N, self.d_model), 
+                  torch.zeros(self.n_encoder, N, self.d_model))
+        _, hidden = self.encoder(src_embeddings, s0)
+        out, _ = self.decoder(tgt_embeddings, hidden)
+        return out
+
+
 
 class Seq2Seq(nn.Module):
     def __init__(self, d_model, nhead, n_encoder, n_decoder, d_feedforward, max_seq_len, device):
@@ -95,7 +149,7 @@ class TransformerActorCriticPolicy(ActorCriticPolicy):
             features_extractor_kwargs=dict(
                 device=device, 
                 d_model=d_model, 
-                nhead=nhead, 
+                nhead=nhead,
                 n_encoder=n_encoder,
                 n_decoder=n_decoder,
                 d_feedforward=d_feedforward
