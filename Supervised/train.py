@@ -3,6 +3,7 @@ import argparse
 from torch.utils.tensorboard import SummaryWriter
 
 from addition import AdditionDataset
+from mult import MultDataset
 from token_lookup import *
 from models import *
 
@@ -55,7 +56,8 @@ def main():
     #print(args.seq2seq)
     #print(type(model))
     #Write Train Loop
-    dataset = AdditionDataset(max_digits=args.digits)
+    #dataset = AdditionDataset(max_digits=args.digits)
+    dataset = MultDataset(max_digits=args.digits)
     train(model, dataset, args, device, args.seq2seq)
     #TODO Log training information with tensorboard
 
